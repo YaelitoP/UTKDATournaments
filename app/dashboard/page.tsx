@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/authContext';
 import { supabase } from '@/utils/supabase/supabaseClient';
@@ -26,6 +26,12 @@ type Team = {
   modality_label?: string;
 };
 
+type EnrollmentDetail = {
+  tournament_id: string;
+  tournament_nombre: string;
+  modality_label: string;
+};
+
 export default function DashboardPage() {
   const { user, loading: authLoading, coachProfile, signOut } = useAuth();
   const router = useRouter();
@@ -35,6 +41,11 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'competidores' | 'equipos'>('competidores');
   const [showModal, setShowModal] = useState(false);
   const [showRetry, setShowRetry] = useState(false);
+  
+  // Enrollment states
+  const [allEnrollments, setAllEnrollments] = useState<Record<string, EnrollmentDetail[]>>({});
+  const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
+  const [selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -94,6 +105,28 @@ export default function DashboardPage() {
         })) || [];
 
         setTeams(formattedTeams);
+
+        // Fetch all individual enrollments for badges
+        const { data: enrollData } = await supabase
+          .from('individual_entries')
+          .select(`
+            competitor_id,
+            tournament_id,
+            tournaments (nombre),
+            modalities (label)
+          `)
+          .eq('coach_id', user.id);
+
+        const enrollMap: Record<string, EnrollmentDetail[]> = {};
+        enrollData?.forEach((e: any) => {
+          if (!enrollMap[e.competitor_id]) enrollMap[e.competitor_id] = [];
+          enrollMap[e.competitor_id].push({
+            tournament_id: e.tournament_id,
+            tournament_nombre: e.tournaments?.nombre || 'Torneo Desconocido',
+            modality_label: e.modalities?.label || 'Modalidad'
+          });
+        });
+        setAllEnrollments(enrollMap);
       } catch (error: any) {
         console.error('Dashboard: Error fetching data:', error.message);
       } finally {
@@ -255,20 +288,41 @@ export default function DashboardPage() {
                       </td>
                     </tr>
                   ) : (
-                    competitors.map(c => (
-                      <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-gray-900">{c.apellido}, {c.nombre}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded uppercase border border-blue-100">
-                            {c.cinturón_grado} {c.cinturón_tipo}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{c.documento}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{c.sexo}</td>
-                      </tr>
-                    ))
+                    competitors.map(c => {
+                      const enrollments = allEnrollments[c.id] || [];
+                      const uniqueTournamentCount = new Set(enrollments.map(e => e.tournament_id)).size;
+                      
+                      return (
+                        <tr 
+                          key={c.id} 
+                          className="hover:bg-gray-50 transition-colors cursor-pointer group"
+                          onClick={() => {
+                            if (uniqueTournamentCount > 0) {
+                              setSelectedCompetitor(c);
+                              setShowEnrollmentModal(true);
+                            }
+                          }}
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="font-bold text-gray-900">{c.apellido}, {c.nombre}</div>
+                              {uniqueTournamentCount > 0 && (
+                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                                  {uniqueTournamentCount} {uniqueTournamentCount === 1 ? 'Torneo' : 'Torneos'}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded uppercase border border-blue-100">
+                              {c.cinturón_grado} {c.cinturón_tipo}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{c.documento}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{c.sexo}</td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -319,6 +373,63 @@ export default function DashboardPage() {
           closeModal={() => setShowModal(false)} 
           onCompetitorAdded={handleCompetitorAdded} 
         />
+      )}
+
+      {showEnrollmentModal && selectedCompetitor && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Inscripciones Activas</h3>
+                <p className="text-sm text-gray-500">{selectedCompetitor.apellido}, {selectedCompetitor.nombre}</p>
+              </div>
+              <button onClick={() => setShowEnrollmentModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              <div className="space-y-4">
+                {/* Agrupar por torneo */}
+                {Object.entries(
+                  (allEnrollments[selectedCompetitor.id] || []).reduce((acc, curr) => {
+                    if (!acc[curr.tournament_id]) acc[curr.tournament_id] = { name: curr.tournament_nombre, mods: [] };
+                    acc[curr.tournament_id].mods.push(curr.modality_label);
+                    return acc;
+                  }, {} as Record<string, { name: string, mods: string[] }>)
+                ).map(([tId, info]) => (
+                  <div key={tId} className="p-4 rounded-xl border border-blue-100 bg-blue-50/30 group hover:border-blue-300 transition-all">
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="font-bold text-blue-900">{info.name}</h4>
+                      <button 
+                        onClick={() => router.push(`/torneos/${tId}`)}
+                        className="text-[10px] font-bold uppercase tracking-wider text-blue-600 hover:underline"
+                      >
+                        Ver Torneo →
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {info.mods.map((m, idx) => (
+                        <span key={idx} className="px-2 py-0.5 bg-white border border-blue-100 text-blue-700 text-[10px] font-bold rounded uppercase">
+                          {m}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-6 bg-gray-50 border-t flex justify-end">
+              <button 
+                onClick={() => setShowEnrollmentModal(false)}
+                className="px-6 py-2 bg-white border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-100 transition-colors shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
