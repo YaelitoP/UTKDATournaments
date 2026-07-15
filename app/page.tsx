@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../components/authContext'; // Importa el hook useAuth
-import logo from '../public/logo.jpg';
+import logo from '../public/itf-logo.png';
 
 const LoginPage = () => {
   const { signIn, user, loading: authLoading } = useAuth(); // Usamos la función signIn desde el contexto

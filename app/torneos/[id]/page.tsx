@@ -3,7 +3,19 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/components/authContext';
 import { supabase } from '@/utils/supabase/supabaseClient';
-import Modal from '@/components/modalInscripcion';
+import ModalInscripcion from '@/components/modalInscripcion';
+import { 
+  ChevronLeft, 
+  Users, 
+  Trophy, 
+  Plus, 
+  Save, 
+  X, 
+  Trash2, 
+  UserPlus,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
 
 type Modality = {
   id: string;
@@ -462,376 +474,507 @@ export default function TournamentDetailPage() {
   if (!authLoading && !user) return null;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto min-h-screen bg-gray-50">
-      <div className="mb-8 flex justify-between items-end">
-        <div>
-          <button 
-            onClick={() => router.push('/torneos')}
-            className="mb-4 text-blue-600 hover:underline flex items-center gap-2 font-medium"
-          >
-            ← Volver a torneos
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">{tournament?.nombre}</h1>
-          <p className="text-gray-600">Fecha: {tournament ? new Date(tournament.fecha).toLocaleDateString() : ''}</p>
-        </div>
-        
-        <div className="flex bg-white p-1 rounded-lg border shadow-sm">
-          <button 
-            onClick={() => setActiveTab('individual')}
-            className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'individual' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            Individual
-          </button>
-          <button 
-            onClick={() => setActiveTab('teams')}
-            className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'teams' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            Equipos
-          </button>
+    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto mb-10">
+        <button 
+          onClick={() => router.push('/torneos')}
+          className="group mb-6 flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors font-bold text-sm uppercase tracking-widest"
+        >
+          <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+          Volver a torneos
+        </button>
+
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+                <Trophy size={28} className="text-white" />
+              </div>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight">{tournament?.nombre}</h1>
+            </div>
+            <p className="text-slate-500 font-medium flex items-center gap-2 pl-14">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              Fecha del evento: {tournament ? new Date(tournament.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+            </p>
+          </div>
+          
+          <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
+            <button 
+              onClick={() => setActiveTab('individual')}
+              className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-black transition-all duration-300 ${
+                activeTab === 'individual' 
+                ? 'bg-slate-900 text-white shadow-xl shadow-slate-200' 
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Users size={18} />
+              INDIVIDUAL
+            </button>
+            <button 
+              onClick={() => setActiveTab('teams')}
+              className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-black transition-all duration-300 ${
+                activeTab === 'teams' 
+                ? 'bg-slate-900 text-white shadow-xl shadow-slate-200' 
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Trophy size={18} />
+              EQUIPOS
+            </button>
+          </div>
         </div>
       </div>
 
-      {loading ? (
-        <div className="bg-white rounded-xl border p-8 animate-pulse space-y-6">
-          <div className="h-8 w-48 bg-gray-200 rounded"></div>
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-12 w-full bg-gray-100 rounded"></div>)}
+      <div className="max-w-7xl mx-auto">
+        {loading ? (
+          <div className="bg-white rounded-3xl border border-slate-200 p-12 shadow-sm animate-pulse space-y-8">
+            <div className="h-10 w-64 bg-slate-100 rounded-xl"></div>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-16 w-full bg-slate-50 rounded-xl border border-slate-100"></div>)}
+            </div>
           </div>
-        </div>
-      ) : activeTab === 'individual' ? (
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b">
-                  <th className="p-4 font-bold text-gray-500 uppercase text-xs tracking-wider sticky left-0 bg-gray-50 z-10">Competidor</th>
-                  {individualMods.map(mod => (
-                    <th key={mod.id} className="p-4 font-bold text-gray-500 uppercase text-xs tracking-wider text-center">
-                      {mod.label}
-                    </th>
-                  ))}
-                  <th className="p-4 font-bold text-gray-500 uppercase text-xs tracking-wider text-right sticky right-0 bg-gray-50 z-10">Gestión</th>
-                </tr>
-              </thead>
-              <tbody>
-                {competitors.length === 0 ? (
-                  <tr>
-                    <td colSpan={individualMods.length + 2} className="p-12 text-center text-gray-400 italic">
-                      No tienes competidores registrados para inscribir.
-                    </td>
-                  </tr>
-                ) : (
-                  competitors.map(comp => {
-                    const isEditing = editingId === comp.id;
-                    const hasEnrollments = (enrollments[comp.id]?.size || 0) > 0;
-                    
-                    return (
-                      <tr key={comp.id} className={`border-b transition-colors ${isEditing ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}>
-                        <td className="p-4 sticky left-0 bg-inherit z-10">
-                          <div className="font-bold text-gray-900">{comp.apellido}, {comp.nombre}</div>
-                          <div className="text-[10px] text-blue-600 font-bold uppercase">{comp.cinturón_grado} {comp.cinturón_tipo}</div>
-                        </td>
-                        
-                        {individualMods.map(mod => {
-                          const isEnrolled = isEditing 
-                            ? tempEnrollments.has(mod.id)
-                            : enrollments[comp.id]?.has(mod.id);
-                          
-                          return (
-                            <td key={mod.id} className="p-4 text-center">
-                              <input 
-                                type="checkbox"
-                                checked={!!isEnrolled}
-                                disabled={!isEditing}
-                                onChange={() => toggleTempModality(mod.id)}
-                                className={`w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-all ${isEditing ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
-                              />
-                            </td>
-                          );
-                        })}
-
-                        <td className="p-4 text-right sticky right-0 bg-inherit z-10">
-                          {isEditing ? (
-                            <div className="flex gap-2 justify-end">
-                              <button 
-                                onClick={() => setEditingId(null)}
-                                className="text-xs font-bold text-gray-500 hover:text-gray-700"
-                                disabled={isSaving}
-                              >
-                                Cancelar
-                              </button>
-                              <button 
-                                onClick={() => handleSave(comp)}
-                                className="px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-md shadow-sm hover:bg-blue-700 disabled:opacity-50"
-                                disabled={isSaving}
-                              >
-                                {isSaving ? '...' : (tempEnrollments.size === 0 ? 'Eliminar' : 'Guardar')}
-                              </button>
+        ) : activeTab === 'individual' ? (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Table Card */}
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="p-6 font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] sticky left-0 bg-white z-10 border-r border-slate-50 w-64">Competidor</th>
+                      {individualMods.map(mod => (
+                        <th key={mod.id} className="p-6 font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] text-center min-w-[140px]">
+                          {mod.label}
+                        </th>
+                      ))}
+                      <th className="p-6 font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] text-right sticky right-0 bg-white z-10 border-l border-slate-50">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {competitors.length === 0 ? (
+                      <tr>
+                        <td colSpan={individualMods.length + 2} className="p-20 text-center">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+                              <Users size={32} />
                             </div>
-                          ) : (
-                            <button 
-                              onClick={() => handleEdit(comp)}
-                              className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${hasEnrollments ? 'text-blue-600 border border-blue-600 hover:bg-blue-50' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'}`}
-                            >
-                              {hasEnrollments ? 'Editar' : 'Inscribir'}
-                            </button>
-                          )}
+                            <p className="text-slate-400 font-bold italic tracking-wide">No tienes competidores registrados para inscribir.</p>
+                          </div>
                         </td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-8 flex justify-center">
-            <button 
-              onClick={() => setShowAddCompetitorModal(true)}
-              className="px-8 py-3 border-2 border-dashed border-gray-300 text-gray-500 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-all font-bold flex items-center gap-2 bg-white/50"
-            >
-              <span className="text-lg">+</span> Agregar un nuevo competidor
-            </button>
-          </div>
-
-          {showAddCompetitorModal && (
-            <Modal 
-              closeModal={() => setShowAddCompetitorModal(false)} 
-              onCompetitorAdded={(newComp: any) => {
-                setCompetitors(prev => [...prev, newComp].sort((a, b) => a.apellido.localeCompare(b.apellido)));
-                setShowAddCompetitorModal(false);
-              }} 
-            />
-          )}
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {/* Listado de Equipos Existentes */}
-          <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b">
-                  <th className="p-4 font-bold text-gray-500 uppercase text-xs tracking-wider">Equipo</th>
-                  {teamMods.map(mod => (
-                    <th key={mod.id} className="p-4 font-bold text-gray-500 uppercase text-xs tracking-wider text-center">
-                      {mod.label}
-                    </th>
-                  ))}
-                  <th className="p-4 font-bold text-gray-500 uppercase text-xs tracking-wider text-right">Gestión</th>
-                </tr>
-              </thead>
-              <tbody>
-                {uniqueTeams.length === 0 ? (
-                  <tr>
-                    <td colSpan={teamMods.length + 2} className="p-12 text-center text-gray-400 italic">
-                      No has creado equipos para este torneo.
-                    </td>
-                  </tr>
-                ) : (
-                  uniqueTeams.map(team => {
-                    const isEditing = editingTeamName === team.nombre_equipo;
-                    const hasEnrollments = (teamEnrollments[team.nombre_equipo]?.size || 0) > 0;
-                    const members = teamMembers[team.nombre_equipo] || [];
-                    
-                    return (
-                      <tr key={team.id} className={`border-b transition-colors ${isEditing ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}>
-                        <td className="p-4">
-                          <div className="font-bold text-gray-900">{team.nombre_equipo}</div>
-                          <div className="flex gap-2 mt-1 mb-2">
-                            <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded font-bold text-gray-500 uppercase">{team.division_edad}</span>
-                            <span className="text-[10px] bg-blue-50 px-1.5 py-0.5 rounded font-bold text-blue-600 uppercase border border-blue-100">{team.genero}</span>
-                          </div>
-                          
-                          {/* Gestión de Integrantes Unificada */}
-                          <div className="space-y-1">
-                            {members.map(m => (
-                              <div key={m.competitor_id} className="flex items-center justify-between gap-2 bg-white px-2 py-1 rounded border border-gray-100 text-[10px] group/member">
-                                <span className="text-gray-600 font-medium">{m.competitors.apellido}, {m.competitors.nombre}</span>
-                                <button 
-                                  onClick={() => handleRemoveMemberFromTeam(team.nombre_equipo, m.competitor_id)}
-                                  className="text-red-400 hover:text-red-600 opacity-0 group-hover/member:opacity-100 transition-opacity"
-                                >
-                                  Quitar
-                                </button>
-                              </div>
-                            ))}
-                            <select 
-                              className="w-full mt-2 p-1 text-[10px] border border-dashed rounded bg-transparent text-gray-400 outline-none focus:border-blue-400 focus:text-blue-600 transition-colors"
-                              onChange={(e) => {
-                                if (e.target.value) {
-                                  handleAddMemberToTeam(team.nombre_equipo, e.target.value);
-                                  e.target.value = '';
-                                }
-                              }}
-                              value=""
-                            >
-                              <option value="">+ Agregar integrante</option>
-                              {competitors
-                                .filter(c => !members.some(m => m.competitor_id === c.id))
-                                .map(c => (
-                                  <option key={c.id} value={c.id}>{c.apellido}, {c.nombre}</option>
-                                ))
-                              }
-                            </select>
-                          </div>
-                        </td>
+                    ) : (
+                      competitors.map(comp => {
+                        const isEditing = editingId === comp.id;
+                        const hasEnrollments = (enrollments[comp.id]?.size || 0) > 0;
                         
-                        {teamMods.map(mod => {
-                          const isEnrolled = isEditing 
-                            ? tempTeamEnrollments.has(mod.id)
-                            : teamEnrollments[team.nombre_equipo]?.has(mod.id);
-                          
-                          return (
-                            <td key={mod.id} className="p-4 text-center">
-                              <input 
-                                type="checkbox"
-                                checked={!!isEnrolled}
-                                disabled={!isEditing}
-                                onChange={() => toggleTempTeamModality(mod.id)}
-                                className={`w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-all ${isEditing ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
-                              />
+                        return (
+                          <tr key={comp.id} className={`group transition-all duration-300 ${isEditing ? 'bg-blue-50/30' : 'hover:bg-slate-50/50'}`}>
+                            <td className="p-6 sticky left-0 bg-inherit z-10 border-r border-slate-50">
+                              <div className="font-black text-slate-900 text-lg leading-tight mb-1">{comp.apellido}, {comp.nombre}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-md border border-blue-100">
+                                  {comp.cinturón_grado} {comp.cinturón_tipo}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">{comp.sexo === 'M' ? 'Masculino' : 'Femenino'}</span>
+                              </div>
                             </td>
-                          );
-                        })}
+                            
+                            {individualMods.map(mod => {
+                              const isEnrolled = isEditing 
+                                ? tempEnrollments.has(mod.id)
+                                : enrollments[comp.id]?.has(mod.id);
+                              
+                              return (
+                                <td key={mod.id} className="p-6 text-center">
+                                  <div className="flex justify-center">
+                                    <label className={`relative flex items-center justify-center w-8 h-8 rounded-xl border-2 transition-all duration-300 ${
+                                      isEnrolled 
+                                      ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200 scale-110' 
+                                      : isEditing 
+                                        ? 'border-slate-200 hover:border-blue-400 cursor-pointer bg-white' 
+                                        : 'border-slate-100 bg-slate-50/50'
+                                    }`}>
+                                      <input 
+                                        type="checkbox"
+                                        checked={!!isEnrolled}
+                                        disabled={!isEditing}
+                                        onChange={() => toggleTempModality(mod.id)}
+                                        className="hidden"
+                                      />
+                                      {isEnrolled && <CheckCircle2 size={18} strokeWidth={3} />}
+                                    </label>
+                                  </div>
+                                </td>
+                              );
+                            })}
 
-                        <td className="p-4 text-right">
-                          <div className="flex gap-2 justify-end">
-                            {isEditing ? (
-                              <>
+                            <td className="p-6 text-right sticky right-0 bg-inherit z-10 border-l border-slate-50">
+                              {isEditing ? (
+                                <div className="flex gap-3 justify-end">
+                                  <button 
+                                    onClick={() => setEditingId(null)}
+                                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+                                    disabled={isSaving}
+                                  >
+                                    <X size={20} />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleSave(comp)}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 active:scale-95 transition-all"
+                                    disabled={isSaving}
+                                  >
+                                    {isSaving ? (
+                                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                      <>
+                                        <Save size={16} />
+                                        {tempEnrollments.size === 0 ? 'ELIMINAR' : 'GUARDAR'}
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              ) : (
                                 <button 
-                                  onClick={() => setEditingTeamName(null)}
-                                  className="text-xs font-bold text-gray-500 hover:text-gray-700"
-                                  disabled={isSaving}
+                                  onClick={() => handleEdit(comp)}
+                                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+                                    hasEnrollments 
+                                    ? 'text-blue-600 border-2 border-blue-600 hover:bg-blue-50' 
+                                    : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200'
+                                  }`}
                                 >
-                                  Cancelar
+                                  {hasEnrollments ? 'EDITAR' : 'INSCRIBIR'}
                                 </button>
-                                <button 
-                                  onClick={() => handleSaveTeam(team.nombre_equipo)}
-                                  className="px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-md shadow-sm hover:bg-blue-700 disabled:opacity-50"
-                                  disabled={isSaving}
-                                >
-                                  {isSaving ? '...' : 'Guardar'}
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button 
-                                  onClick={() => handleDeleteTeam(team.nombre_equipo)}
-                                  className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
-                                  title="Eliminar equipo"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                  </svg>
-                                </button>
-                                <button 
-                                  onClick={() => handleEditTeam(team)}
-                                  className="px-4 py-1.5 text-blue-600 border border-blue-600 rounded-md text-xs font-bold hover:bg-blue-50 transition-all"
-                                >
-                                  Editar
-                                </button>
-                              </>
-                            )}
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Floating Action / Button Section */}
+            <div className="flex justify-center pt-4">
+              <button 
+                onClick={() => setShowAddCompetitorModal(true)}
+                className="group flex flex-col items-center gap-4 px-12 py-10 border-2 border-dashed border-slate-200 rounded-[2.5rem] text-slate-400 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/30 transition-all duration-500 bg-white/50"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-slate-50 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all duration-500 shadow-sm group-hover:shadow-xl group-hover:shadow-blue-200 group-hover:-translate-y-1">
+                  <UserPlus size={28} />
+                </div>
+                <span className="text-sm font-black uppercase tracking-[0.2em]">Agregar un nuevo competidor</span>
+              </button>
+            </div>
+
+            {showAddCompetitorModal && (
+              <ModalInscripcion 
+                closeModal={() => setShowAddCompetitorModal(false)} 
+                onCompetitorAdded={(newComp: any) => {
+                  setCompetitors(prev => [...prev, newComp].sort((a, b) => a.apellido.localeCompare(b.apellido)));
+                  setShowAddCompetitorModal(false);
+                }} 
+              />
+            )}
+          </div>
+        ) : (
+          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Listado de Equipos Existentes */}
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="p-6 font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] w-80">Equipo e Integrantes</th>
+                      {teamMods.map(mod => (
+                        <th key={mod.id} className="p-6 font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] text-center min-w-[140px]">
+                          {mod.label}
+                        </th>
+                      ))}
+                      <th className="p-6 font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {uniqueTeams.length === 0 ? (
+                      <tr>
+                        <td colSpan={teamMods.length + 2} className="p-20 text-center">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+                              <Trophy size={32} />
+                            </div>
+                            <p className="text-slate-400 font-bold italic tracking-wide">No has creado equipos para este torneo.</p>
                           </div>
                         </td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                    ) : (
+                      uniqueTeams.map(team => {
+                        const isEditing = editingTeamName === team.nombre_equipo;
+                        const hasEnrollments = (teamEnrollments[team.nombre_equipo]?.size || 0) > 0;
+                        const members = teamMembers[team.nombre_equipo] || [];
+                        
+                        return (
+                          <tr key={team.id} className={`group transition-all duration-300 ${isEditing ? 'bg-blue-50/30' : 'hover:bg-slate-50/50'}`}>
+                            <td className="p-6 align-top">
+                              <div className="mb-4">
+                                <div className="font-black text-slate-900 text-xl leading-tight mb-2 uppercase tracking-tight">{team.nombre_equipo}</div>
+                                <div className="flex gap-2">
+                                  <span className="text-[9px] bg-slate-100 px-2 py-0.5 rounded-full font-black text-slate-500 uppercase tracking-widest">{team.division_edad}</span>
+                                  <span className="text-[9px] bg-blue-600 px-2 py-0.5 rounded-full font-black text-white uppercase tracking-widest shadow-sm shadow-blue-200">{team.genero}</span>
+                                </div>
+                              </div>
+                              
+                              {/* Gestión de Integrantes Unificada */}
+                              <div className="space-y-1.5 max-w-[280px]">
+                                {members.map(m => (
+                                  <div key={m.competitor_id} className="flex items-center justify-between gap-3 bg-white px-3 py-2 rounded-xl border border-slate-100 text-[11px] group/member hover:border-blue-200 transition-colors shadow-sm">
+                                    <span className="text-slate-700 font-bold uppercase tracking-tight">{m.competitors.apellido}, {m.competitors.nombre}</span>
+                                    <button 
+                                      onClick={() => handleRemoveMemberFromTeam(team.nombre_equipo, m.competitor_id)}
+                                      className="text-red-400 hover:text-red-600 opacity-0 group-hover/member:opacity-100 transition-all p-1 hover:bg-red-50 rounded-lg"
+                                      title="Quitar del equipo"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                ))}
+                                <div className="relative">
+                                  <select 
+                                    className="w-full mt-2 pl-3 pr-8 py-2 text-[11px] font-black uppercase tracking-widest border border-dashed border-slate-200 rounded-xl bg-slate-50/50 text-slate-400 outline-none focus:border-blue-400 focus:text-blue-600 focus:bg-white transition-all appearance-none cursor-pointer"
+                                    onChange={(e) => {
+                                      if (e.target.value) {
+                                        handleAddMemberToTeam(team.nombre_equipo, e.target.value);
+                                        e.target.value = '';
+                                      }
+                                    }}
+                                    value=""
+                                  >
+                                    <option value="">+ AGREGAR INTEGRANTE</option>
+                                    {competitors
+                                      .filter(c => !members.some(m => m.competitor_id === c.id))
+                                      .map(c => (
+                                        <option key={c.id} value={c.id}>{c.apellido.toUpperCase()}, {c.nombre.toUpperCase()}</option>
+                                      ))
+                                    }
+                                  </select>
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                                    <UserPlus size={14} />
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            
+                            {teamMods.map(mod => {
+                              const isEnrolled = isEditing 
+                                ? tempTeamEnrollments.has(mod.id)
+                                : teamEnrollments[team.nombre_equipo]?.has(mod.id);
+                              
+                              return (
+                                <td key={mod.id} className="p-6 text-center align-top pt-8">
+                                  <div className="flex justify-center">
+                                    <label className={`relative flex items-center justify-center w-10 h-10 rounded-2xl border-2 transition-all duration-300 ${
+                                      isEnrolled 
+                                      ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-200 scale-110' 
+                                      : isEditing 
+                                        ? 'border-slate-200 hover:border-blue-400 cursor-pointer bg-white' 
+                                        : 'border-slate-100 bg-slate-50/50'
+                                    }`}>
+                                      <input 
+                                        type="checkbox"
+                                        checked={!!isEnrolled}
+                                        disabled={!isEditing}
+                                        onChange={() => toggleTempTeamModality(mod.id)}
+                                        className="hidden"
+                                      />
+                                      {isEnrolled && <CheckCircle2 size={22} strokeWidth={3} />}
+                                    </label>
+                                  </div>
+                                </td>
+                              );
+                            })}
 
-          {/* Formulario de Nuevo Equipo */}
-          {isAddingTeam ? (
-            <div className="bg-white p-8 rounded-xl shadow-md border-2 border-blue-500 animate-in fade-in zoom-in duration-200">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">Nuevo Equipo</h3>
-              <form onSubmit={handleCreateTeam} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Nombre del equipo</label>
-                  <input 
-                    type="text" 
-                    value={newTeamName}
-                    onChange={(e) => setNewTeamName(e.target.value)}
-                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="Ej: Los Guerreros"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">División Edad</label>
-                  <select 
-                    value={newTeamAge}
-                    onChange={(e) => setNewTeamAge(e.target.value)}
-                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                  >
-                    <option value="PRE-INFANTIL">Pre-Infantil</option>
-                    <option value="INFANTIL">Infantil</option>
-                    <option value="CADETE">Cadete</option>
-                    <option value="JUVENIL">Juvenil</option>
-                    <option value="ADULTO">Adulto</option>
-                    <option value="SENIOR">Senior</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Género</label>
-                  <select 
-                    value={newTeamGender}
-                    onChange={(e) => setNewTeamGender(e.target.value)}
-                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                  >
-                    <option value="MASCULINO">Masculino</option>
-                    <option value="FEMENINO">Femenino</option>
-                    <option value="MIXTO">Mixto</option>
-                  </select>
-                </div>
-                
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Inscribir en Modalidades</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {teamMods.map(mod => (
-                      <label key={mod.id} className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                        <input 
-                          type="checkbox"
-                          checked={tempTeamEnrollments.has(mod.id)}
-                          onChange={() => toggleTempTeamModality(mod.id)}
-                          className="w-4 h-4 text-blue-600 rounded"
-                        />
-                        <span className="text-sm font-medium text-gray-700">{mod.label}</span>
-                      </label>
-                    ))}
+                            <td className="p-6 text-right align-top pt-8">
+                              <div className="flex gap-3 justify-end">
+                                {isEditing ? (
+                                  <>
+                                    <button 
+                                      onClick={() => setEditingTeamName(null)}
+                                      className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+                                      disabled={isSaving}
+                                    >
+                                      <X size={20} />
+                                    </button>
+                                    <button 
+                                      onClick={() => handleSaveTeam(team.nombre_equipo)}
+                                      className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 active:scale-95 transition-all"
+                                      disabled={isSaving}
+                                    >
+                                      {isSaving ? (
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                      ) : (
+                                        <>
+                                          <Save size={16} />
+                                          GUARDAR
+                                        </>
+                                      )}
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button 
+                                      onClick={() => handleDeleteTeam(team.nombre_equipo)}
+                                      className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                      title="Eliminar equipo"
+                                    >
+                                      <Trash2 size={20} />
+                                    </button>
+                                    <button 
+                                      onClick={() => handleEditTeam(team)}
+                                      className="flex items-center gap-2 px-6 py-2.5 text-blue-600 border-2 border-blue-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-50 transition-all duration-300"
+                                    >
+                                      EDITAR
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Formulario de Nuevo Equipo - Card Redesign */}
+            {isAddingTeam ? (
+              <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-900/5 border border-blue-100 animate-in fade-in zoom-in duration-300 max-w-4xl mx-auto">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                    <Trophy size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Nuevo Equipo</h3>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Configura los detalles de tu equipo</p>
                   </div>
                 </div>
 
-                <div className="md:col-span-2 flex justify-end gap-3 mt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => { setIsAddingTeam(false); setTempTeamEnrollments(new Set()); }}
-                    className="px-6 py-2.5 text-gray-500 font-bold hover:text-gray-700 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="px-8 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md shadow-blue-200 transition-all active:scale-95"
-                    disabled={isSaving}
-                  >
-                    {isSaving ? 'Guardando...' : 'Crear Equipo e Inscribir'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          ) : (
-            <button 
-              onClick={() => { setIsAddingTeam(true); setTempTeamEnrollments(new Set()); }}
-              className="w-full py-12 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 hover:border-blue-400 hover:text-blue-600 hover:bg-white transition-all font-bold flex flex-col items-center gap-2"
-            >
-              <span className="text-2xl">+</span>
-              Crear un nuevo equipo para este torneo
-            </button>
-          )}
-        </div>
-      )}
+                <form onSubmit={handleCreateTeam} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="md:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Nombre del equipo</label>
+                    <input 
+                      type="text" 
+                      value={newTeamName}
+                      onChange={(e) => setNewTeamName(e.target.value)}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+                      placeholder="Ej: DRAGONES DEL SUR"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">División Edad</label>
+                    <div className="relative">
+                      <select 
+                        value={newTeamAge}
+                        onChange={(e) => setNewTeamAge(e.target.value)}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-700 appearance-none cursor-pointer"
+                      >
+                        <option value="PRE-INFANTIL">Pre-Infantil</option>
+                        <option value="INFANTIL">Infantil</option>
+                        <option value="CADETE">Cadete</option>
+                        <option value="JUVENIL">Juvenil</option>
+                        <option value="ADULTO">Adulto</option>
+                        <option value="SENIOR">Senior</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Género</label>
+                    <div className="relative">
+                      <select 
+                        value={newTeamGender}
+                        onChange={(e) => setNewTeamGender(e.target.value)}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-700 appearance-none cursor-pointer"
+                      >
+                        <option value="MASCULINO">Masculino</option>
+                        <option value="FEMENINO">Femenino</option>
+                        <option value="MIXTO">Mixto</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-1">Modalidades de Inscripción</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {teamMods.map(mod => (
+                        <label key={mod.id} className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
+                          tempTeamEnrollments.has(mod.id)
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
+                          : 'bg-white border-slate-100 hover:border-blue-200 text-slate-600'
+                        }`}>
+                          <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                            tempTeamEnrollments.has(mod.id) ? 'bg-white border-white text-blue-600' : 'border-slate-200'
+                          }`}>
+                            {tempTeamEnrollments.has(mod.id) && <CheckCircle2 size={16} strokeWidth={3} />}
+                          </div>
+                          <input 
+                            type="checkbox"
+                            checked={tempTeamEnrollments.has(mod.id)}
+                            onChange={() => toggleTempTeamModality(mod.id)}
+                            className="hidden"
+                          />
+                          <span className="text-sm font-black uppercase tracking-widest">{mod.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 flex justify-end items-center gap-6 mt-6 pt-6 border-t border-slate-50">
+                    <button 
+                      type="button" 
+                      onClick={() => { setIsAddingTeam(false); setTempTeamEnrollments(new Set()); }}
+                      className="text-sm font-black text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="px-10 py-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-200 transition-all active:scale-95 flex items-center gap-3"
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Plus size={20} />
+                          Crear Equipo
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <button 
+                  onClick={() => { setIsAddingTeam(true); setTempTeamEnrollments(new Set()); }}
+                  className="group flex flex-col items-center gap-4 px-16 py-12 border-2 border-dashed border-slate-200 rounded-[3rem] text-slate-400 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/30 transition-all duration-500 bg-white/50"
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-slate-50 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all duration-500 shadow-sm group-hover:shadow-xl group-hover:shadow-blue-200 group-hover:-translate-y-1">
+                    <Plus size={32} />
+                  </div>
+                  <div className="text-center">
+                    <span className="block text-sm font-black uppercase tracking-[0.2em] mb-1">Crear un nuevo equipo</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Para este torneo específico</span>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

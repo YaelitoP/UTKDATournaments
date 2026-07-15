@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useRef } from 'react';
-import { supabase } from '../utils/supabase/supabaseClient';
+import { supabase } from '@/utils/supabase/supabaseClient';
 import { useDataStore, CoachProfile } from '@/store/dataStore';
 
 interface AuthContextType {

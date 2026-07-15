@@ -28,7 +28,7 @@ const tiposCinturon = [
   { value: 'DAN', label: 'Dan (negro)' },
 ];
 
-export default function Modal({ closeModal, onCompetitorAdded }: ModalProps) {
+export default function ModalInscripcion({ closeModal, onCompetitorAdded }: ModalProps) {
   const { register, handleSubmit, watch, formState: { errors }, reset } = useForm<FormValues>();
   const { user } = useAuth(); // Usando el contexto para obtener el usuario autenticado
   const tipoSeleccionado = watch('cinturón_tipo');

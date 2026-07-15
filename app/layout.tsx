@@ -2,6 +2,7 @@
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { AuthProvider } from "@/components/authContext";
+import SidebarWrapper from "@/components/sidebarWrapper";
 
 const defaultUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? `https://${process.env.NEXT_PUBLIC_SUPABASE_URL}`
@@ -15,11 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={GeistSans.className} suppressHydrationWarning>
       <body className="bg-background text-foreground">
-          <div className="">
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </div>
+        <AuthProvider>
+          <SidebarWrapper>
+            {children}
+          </SidebarWrapper>
+        </AuthProvider>
       </body>
     </html>
   );
